@@ -1,0 +1,52 @@
+services:
+  db:
+    image: mariadb:11.4
+    container_name: printer-monitor-db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-printer_monitor}
+      MARIADB_USER: ${DOCKER_DB_USER:-printer_monitor}
+      MARIADB_PASSWORD: ${DOCKER_DB_PASSWORD:-printer_monitor_change_me}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_change_me}
+    volumes:
+      - printer_monitor_db:/var/lib/mysql
+      - ./SQLInformation/printer_monitor.sql:/docker-entrypoint-initdb.d/01-printer-monitor.sql:ro
+      - ./database/add-users.sql:/docker-entrypoint-initdb.d/02-add-users.sql:ro
+      - ./database/add-toner-stock.sql:/docker-entrypoint-initdb.d/03-add-toner-stock.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h localhost -u root -p$$MARIADB_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    container_name: printer-monitor-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-printer_monitor}
+      DB_USER: ${DOCKER_DB_USER:-printer_monitor}
+      DB_PASSWORD: ${DOCKER_DB_PASSWORD:-printer_monitor_change_me}
+      SESSION_SECRET: ${SESSION_SECRET:-change-this-session-secret}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SNMP_DEFAULT_PORT: ${SNMP_DEFAULT_PORT:-161}
+      SNMP_DEFAULT_VERSION: ${SNMP_DEFAULT_VERSION:-2c}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_GRAPH_VERSION: ${WHATSAPP_GRAPH_VERSION:-v21.0}
+      WHATSAPP_TEMPLATE_NAME: ${WHATSAPP_TEMPLATE_NAME:-}
+      WHATSAPP_TEMPLATE_LANGUAGE: ${WHATSAPP_TEMPLATE_LANGUAGE:-pt_BR}
+
+volumes:
+  printer_monitor_db:

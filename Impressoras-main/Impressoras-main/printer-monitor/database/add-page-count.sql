@@ -1,0 +1,1 @@
+ALTER TABLE printers ADD COLUMN page_count BIGINT NULL AFTER last_checked;

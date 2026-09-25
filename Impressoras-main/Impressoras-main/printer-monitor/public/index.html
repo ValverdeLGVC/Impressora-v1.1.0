@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Impressoras</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <section id="login-screen" class="login-screen">
+        <form id="login-form" class="login-card">
+            <i class="fa-solid fa-print login-icon"></i>
+            <h1>PrintMonitor</h1>
+            <p>Entre para acessar o monitoramento.</p>
+            <label for="login-user">Usuário</label>
+            <input id="login-user" type="text" autocomplete="username" required>
+            <label for="login-password">Senha</label>
+            <input id="login-password" type="password" autocomplete="current-password" required>
+            <button class="btn btn-primary" type="submit">Entrar</button>
+            <small id="login-message"></small>
+        </form>
+    </section>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-print"></i>
+                <span>PrintMonitor</span>
+            </div>
+            <nav>
+                <a href="#" id="nav-dashboard" class="active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+                <a href="#" id="nav-printers"><i class="fa-solid fa-list"></i> Impressoras</a>
+                <a href="#" id="nav-users"><i class="fa-solid fa-users"></i> Usuários</a>
+                <a href="#" id="nav-counters"><i class="fa-solid fa-calculator"></i> Contadores</a>
+                <a href="#" id="nav-alerts"><i class="fa-solid fa-bell"></i> Alertas</a>
+                <a href="#" id="nav-stock"><i class="fa-solid fa-boxes-stacked"></i> Estoque</a>
+                <a href="#" id="nav-reports"><i class="fa-solid fa-file-pdf"></i> Relatórios</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <h1>Dashboard</h1>
+                <div class="header-actions">
+                    <span id="current-user"></span>
+                    <button id="change-password-button" class="btn btn-secondary">Alterar senha</button>
+                    <button id="logout-button" class="btn btn-danger">Sair</button>
+                    <div class="last-update" id="last-update">Atualizando...</div>
+                </div>
+            </header>
+
+            <section class="summary-cards" id="summary-cards">
+                <!-- Gerado via JS -->
+            </section>
+
+            <section id="toner-dashboard" class="toner-dashboard" aria-label="Resumo de toner"></section>
+
+            <section class="printer-grid" id="printer-grid">
+                <!-- Cards de impressoras injetados via JS -->
+            </section>
+            <!-- TELA DE IMPRESSORAS (Oculta por padrão) -->
+            <section id="printers-list-section" style="display: none;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                    <h2>Gerenciar Impressoras</h2>
+                    <button id="btn-new-printer" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nova
+                        Impressora</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>IP</th>
+                                <th>Localização</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="printers-table-body">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="users-section" class="page-section" style="display: none;">
+                <div class="section-heading"><div><p class="eyebrow">Controle de acesso</p><h2>Usuários</h2></div></div>
+                <form id="user-form" class="panel-form">
+                    <h3>Novo usuário</h3>
+                    <label for="user-name">Nome</label><input id="user-name" required>
+                    <label for="user-password">Senha</label><input id="user-password" type="password" minlength="8" required>
+                    <label for="user-role">Nível de acesso</label>
+                    <select id="user-role"><option value="viewer">Visualizador</option><option value="master">Master</option></select>
+                    <button class="btn btn-primary" type="submit">Cadastrar usuário</button>
+                </form>
+                <div id="users-list" class="content-stack"></div>
+            </section>
+
+            <section id="counters-section" class="page-section" style="display: none;">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Acompanhamento de produção</p>
+                        <h2>Contadores de páginas</h2>
+                    </div>
+                </div>
+                <div class="counter-layout">
+                    <form id="counter-form" class="panel-form">
+                        <h3>Novo contador</h3>
+                        <label for="counter-printer">Impressora</label>
+                        <select id="counter-printer" required></select>
+                        <label for="counter-name">Nome do contador</label>
+                        <input id="counter-name" type="text" placeholder="Ex: Contrato mensal" required>
+                        <label for="counter-target">Quantidade de páginas</label>
+                        <input id="counter-target" type="number" min="1" step="1" placeholder="Ex: 10000" required>
+                        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-plus"></i> Adicionar contador</button>
+                        <p class="form-hint">A leitura atual da impressora será o ponto inicial.</p>
+                    </form>
+                    <div id="counters-list" class="content-stack"></div>
+                </div>
+            </section>
+
+            <section id="alerts-section" class="page-section" style="display: none;">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Atenção operacional</p>
+                        <h2>Alertas</h2>
+                    </div>
+                </div>
+                <div id="alerts-list" class="content-stack"></div>
+            </section>
+
+            <section id="stock-section" class="page-section" style="display: none;">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">Inventário e consumo</p>
+                        <h2>Estoque de toner</h2>
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="stock-new-printer"><i class="fa-solid fa-print"></i> Cadastrar impressora</button>
+                </div>
+                <div id="stock-summary" class="summary-cards"></div>
+                <div class="toner-workspace">
+                    <div class="toner-forms">
+                        <form id="toner-inventory-form" class="panel-form">
+                            <h3>Cadastrar toner</h3>
+                            <label for="toner-model">Modelo</label>
+                            <input id="toner-model" maxlength="120" required>
+                            <label for="toner-color">Cor / tipo</label>
+                            <input id="toner-color" maxlength="40" placeholder="Preto, ciano, drum..." required>
+                            <label for="toner-quantity">Quantidade em estoque</label>
+                            <input id="toner-quantity" type="number" min="0" step="1" required>
+                            <label for="toner-minimum">Estoque mínimo</label>
+                            <input id="toner-minimum" type="number" min="0" step="1" value="2" required>
+                            <label for="toner-printers">Impressoras vinculadas</label>
+                            <select id="toner-printers" multiple required></select>
+                            <button class="btn btn-primary" type="submit"><i class="fa-solid fa-plus"></i> Adicionar ao estoque</button>
+                        </form>
+                        <form id="toner-usage-form" class="panel-form">
+                            <h3>Registrar troca</h3>
+                            <label for="usage-printer">Impressora</label>
+                            <select id="usage-printer" required></select>
+                            <label for="usage-toner">Toner utilizado</label>
+                            <select id="usage-toner" required></select>
+                            <label for="usage-quantity">Quantidade utilizada</label>
+                            <input id="usage-quantity" type="number" min="1" step="1" value="1" required>
+                            <label for="usage-date">Data da troca</label>
+                            <input id="usage-date" type="date" required>
+                            <label for="usage-notes">Observação</label>
+                            <input id="usage-notes" maxlength="500" placeholder="Opcional">
+                            <button class="btn btn-primary" type="submit"><i class="fa-solid fa-droplet"></i> Troca de toner</button>
+                        </form>
+                    </div>
+                    <div class="toner-content">
+                        <div>
+                            <h3 class="subsection-title">Estoque atual</h3>
+                            <div id="stock-list" class="content-stack"></div>
+                        </div>
+                        <div>
+                            <h3 class="subsection-title">Últimas trocas</h3>
+                            <div id="toner-usage-list" class="content-stack"></div>
+                        </div>
+                    </div>
+                </div>
+                <form id="toner-settings-form" class="panel-form toner-settings">
+                    <div class="settings-heading"><div><p class="eyebrow">Reposição e avisos</p><h3>Preferências de estoque</h3></div><label class="toggle-field"><input id="alerts-enabled" type="checkbox"><span>Alertas diários ativos</span></label></div>
+                    <div class="settings-grid">
+                        <div><label for="alert-threshold">Avisar quando houver</label><input id="alert-threshold" type="number" min="0" step="1" value="2"></div>
+                        <div><label for="replenish-target">Quantidade desejada no estoque</label><input id="replenish-target" type="number" min="0" step="1" value="5"></div>
+                        <div><label for="notify-email">E-mail de destino</label><input id="notify-email" type="email" maxlength="254"></div>
+                        <div><label for="notify-whatsapp">WhatsApp com código do país</label><input id="notify-whatsapp" type="tel" maxlength="30" placeholder="5511999999999"></div>
+                    </div>
+                    <label for="stock-decision">Decisão para o relatório</label>
+                    <textarea id="stock-decision" rows="3" maxlength="2000" placeholder="Registre a decisão atual sobre a reposição"></textarea>
+                    <p id="notification-state" class="form-hint"></p>
+                    <button class="btn btn-secondary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar preferências</button>
+                </form>
+            </section>
+
+            <section id="reports-section" class="page-section" style="display: none;">
+                <div class="section-heading"><div><p class="eyebrow">Consumo e planejamento</p><h2>Relatórios de toner</h2></div></div>
+                <div class="report-controls">
+                    <div class="report-mode" role="group" aria-label="Tipo de relatório">
+                        <button type="button" id="report-month-mode" class="btn btn-primary" aria-pressed="true">Mensal</button>
+                        <button type="button" id="report-general-mode" class="btn btn-secondary" aria-pressed="false">Comparativo geral</button>
+                    </div>
+                    <div class="report-filter-grid">
+                        <div id="single-month-control"><label for="report-month">Mês do relatório</label><input id="report-month" type="month" required></div>
+                        <div id="multi-month-control" hidden><label for="report-month-add">Adicionar mês (até 5)</label><div class="inline-control"><input id="report-month-add" type="month"><button type="button" id="add-report-month" class="btn btn-secondary"><i class="fa-solid fa-plus"></i></button></div><div id="selected-months" class="selected-months"></div></div>
+                        <fieldset class="printer-filter"><legend>Impressoras</legend><div id="report-printers" class="printer-checkboxes"></div></fieldset>
+                    </div>
+                    <div class="report-recommendation"><label for="report-recommendation">Sugestão de gasto mensal (unidades por mês)</label><input id="report-recommendation" type="number" min="0" step="1" value="0"><span id="recommendation-context" class="form-hint"></span></div>
+                    <button type="button" id="generate-report" class="btn btn-primary"><i class="fa-solid fa-chart-column"></i> Gerar relatório</button>
+                    <p id="report-message" class="form-hint" role="status"></p>
+                </div>
+                <div id="report-preview" class="report-preview" aria-live="polite"></div>
+            </section>
+
+            <!-- MODAL DE CADASTRO -->
+            <div id="printer-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Cadastrar Impressora</h2>
+                        <button type="button" class="modal-close-button close-modal" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Endereço IP *</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="form-ip" placeholder="Ex: 192.168.1.50" required>
+                                <button type="button" id="btn-test-ip" class="btn btn-secondary">Testar IP</button>
+                            </div>
+                            <small id="test-result" style="margin-top: 5px; display: block;"></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Nome / Identificação *</label>
+                            <input type="text" id="form-name" placeholder="Ex: Impressora RH" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Localização</label>
+                            <input type="text" id="form-location" placeholder="Ex: Sala 2">
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Fabricante</label>
+                                <input type="text" id="form-mfg" placeholder="Ex: Brother">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>Modelo</label>
+                                <input type="text" id="form-model" placeholder="Ex: HL-L5202DW">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary close-modal-btn">Cancelar</button>
+                        <button class="btn btn-primary" id="btn-save-printer">Salvar</button>
+                    </div>
+                </div>
+            </div>
+            <div id="printer-edit-modal" class="modal">
+                <form id="printer-edit-form" class="modal-content">
+                    <div class="modal-header">
+                        <h2>Editar impressora</h2>
+                        <button type="button" class="modal-close-button close-printer-edit close-modal" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="printer-edit-name">Nome da impressora *</label>
+                            <input id="printer-edit-name" type="text" maxlength="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="printer-edit-location">Localização</label>
+                            <input id="printer-edit-location" type="text" maxlength="100">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary close-printer-edit">Cancelar</button>
+                        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar alterações</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/printers.js"></script>
+    <script src="js/features.js"></script>
+    <script src="js/toners.js"></script>
+</body>
+
+</html>
