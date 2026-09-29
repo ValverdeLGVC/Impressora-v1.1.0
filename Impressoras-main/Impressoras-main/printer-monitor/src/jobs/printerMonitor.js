@@ -23,7 +23,9 @@ async function checkPrinters() {
                 let data;
                 try {
                     data = await SnmpService.readPrinterData(printer.ip_address, options);
-                    await db.query('UPDATE printers SET page_count = ? WHERE id = ?', [data.pageCount, printer.id]);
+                    if (data.pageCount !== null) {
+                        await db.query('UPDATE printers SET page_count = ? WHERE id = ?', [data.pageCount, printer.id]);
+                    }
                 } catch (error) {
                     console.warn(`Printer-MIB indisponível para ${printer.ip_address}:`, error.message);
                     return;

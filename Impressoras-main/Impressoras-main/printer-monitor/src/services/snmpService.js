@@ -79,7 +79,9 @@ class SnmpService {
         const toners = [...byIndex.values()]
             .filter((toner) => toner.level !== null && toner.capacity > 0)
             .map((toner) => ({ ...toner, level: Math.max(0, Math.min(100, Math.round(toner.level / toner.capacity * 100))) }));
-        const pageCount = pageCounters.reduce((total, item) => Math.max(total, Number(item.value) || 0), 0) || null;
+        const pageCount = pageCounters.length
+            ? pageCounters.reduce((total, item) => Math.max(total, Number(item.value) || 0), 0)
+            : null;
 
         return { toners, pageCount };
     }
