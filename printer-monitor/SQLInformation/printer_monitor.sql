@@ -172,6 +172,17 @@ CREATE TABLE `toner_alert_log` (
 
 INSERT INTO `toner_settings` (`id`) VALUES (1);
 
+CREATE TABLE `whatsapp_contacts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `phone_number` varchar(15) NOT NULL,
+  `treatment` varchar(20) NOT NULL DEFAULT 'none',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `whatsapp_contacts_phone_unique` (`phone_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

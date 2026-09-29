@@ -36,6 +36,7 @@
                 <a href="#" id="nav-counters"><i class="fa-solid fa-calculator"></i> Contadores</a>
                 <a href="#" id="nav-alerts"><i class="fa-solid fa-bell"></i> Alertas</a>
                 <a href="#" id="nav-stock"><i class="fa-solid fa-boxes-stacked"></i> Estoque</a>
+                <a href="#" id="nav-whatsapp"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
                 <a href="#" id="nav-reports"><i class="fa-solid fa-file-pdf"></i> Relatórios</a>
                 <a href="#" id="nav-inventory-report"><i class="fa-solid fa-clipboard-list"></i> Inventário geral</a>
             </nav>
@@ -198,6 +199,37 @@
                     <p id="notification-state" class="form-hint"></p>
                     <button class="btn btn-secondary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar preferências</button>
                 </form>
+            </section>
+
+            <section id="whatsapp-section" class="page-section" style="display: none;">
+                <div class="section-heading">
+                    <div><p class="eyebrow">Contatos e solicitações</p><h2>WhatsApp</h2></div>
+                </div>
+                <p id="whatsapp-channel-state" class="form-hint" role="status"></p>
+                <div class="whatsapp-workspace">
+                    <form id="whatsapp-contact-form" class="panel-form">
+                        <h3>Novo contato</h3>
+                        <label for="whatsapp-name">Nome</label>
+                        <input id="whatsapp-name" maxlength="100" required>
+                        <label for="whatsapp-phone">Número com código do país</label>
+                        <input id="whatsapp-phone" type="tel" maxlength="30" placeholder="5511999999999" required>
+                        <label for="whatsapp-treatment">Tratamento</label>
+                        <select id="whatsapp-treatment">
+                            <option value="none">Sem tratamento</option>
+                            <option value="Sr.">Sr.</option>
+                            <option value="Sra.">Sra.</option>
+                            <option value="Srta.">Srta.</option>
+                            <option value="Dr.">Dr.</option>
+                            <option value="Dra.">Dra.</option>
+                        </select>
+                        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-plus"></i> Cadastrar contato</button>
+                    </form>
+                    <div class="whatsapp-contact-column">
+                        <h3 class="subsection-title">Contatos cadastrados</h3>
+                        <div id="whatsapp-contacts-list" class="content-stack"></div>
+                    </div>
+                </div>
+                <p id="whatsapp-feedback" class="form-hint" role="status" aria-live="polite"></p>
             </section>
 
             <section id="reports-section" class="page-section" style="display: none;">

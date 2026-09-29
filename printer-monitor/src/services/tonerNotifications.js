@@ -70,4 +70,4 @@ function startTonerAlerts(interval = 60 * 60 * 1000) {
     return setInterval(checkLowStock, interval);
 }
 
-module.exports = { checkLowStock, startTonerAlerts };
+module.exports = { checkLowStock, startTonerAlerts, sendWhatsApp };

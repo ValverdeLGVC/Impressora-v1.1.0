@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('toner-inventory-form').addEventListener('submit', saveInventory);
     document.getElementById('toner-usage-form').addEventListener('submit', saveUsage);
     document.getElementById('toner-settings-form').addEventListener('submit', saveSettings);
+    document.getElementById('whatsapp-contact-form').addEventListener('submit', saveWhatsappContact);
+    document.getElementById('whatsapp-contacts-list').addEventListener('submit', updateWhatsappContact);
+    document.getElementById('whatsapp-contacts-list').addEventListener('click', handleWhatsappContactAction);
     document.getElementById('usage-printer').addEventListener('change', populateUsageToners);
     document.getElementById('stock-new-printer').addEventListener('click', () => {
         window.showSection('printers', 'Impressoras');
@@ -53,6 +56,109 @@ function renderTonerData() {
     renderTonerDashboard();
     populateReportPrinters();
     hydrateSettings();
+    updateWhatsappIntegrationState();
+}
+
+window.loadWhatsappContacts = async function () {
+    const list = document.getElementById('whatsapp-contacts-list');
+    try {
+        const response = await fetch('/api/toners/whatsapp-contacts');
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'Erro ao carregar contatos.');
+        renderWhatsappContacts(result.data);
+    } catch (error) {
+        list.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    }
+};
+
+function updateWhatsappIntegrationState() {
+    const status = document.getElementById('whatsapp-channel-state');
+    status.textContent = 'Os botões abrem uma conversa no WhatsApp com a mensagem pronta. Revise e envie pelo aplicativo; alertas automáticos exigem a WhatsApp Cloud API.';
+}
+
+function treatmentOptions(selected) {
+    return [['none', 'Sem tratamento'], ['Sr.', 'Sr.'], ['Sra.', 'Sra.'], ['Srta.', 'Srta.'], ['Dr.', 'Dr.'], ['Dra.', 'Dra.']]
+        .map(([value, label]) => `<option value="${value}" ${value === selected ? 'selected' : ''}>${label}</option>`).join('');
+}
+
+function renderWhatsappContacts(contacts) {
+    const list = document.getElementById('whatsapp-contacts-list');
+    if (!contacts.length) {
+        list.innerHTML = '<div class="empty-state"><i class="fa-brands fa-whatsapp"></i><h3>Nenhum contato cadastrado</h3></div>';
+        return;
+    }
+    list.innerHTML = contacts.map(contact => `<article class="whatsapp-contact">
+        <form class="whatsapp-contact-form" data-contact-form="${contact.id}">
+            <label>Nome<input name="name" value="${escapeHtml(contact.name)}" maxlength="100" required></label>
+            <label>Número<input name="phone" type="tel" value="${escapeHtml(contact.phone)}" maxlength="30" required></label>
+            <label>Tratamento<select name="treatment">${treatmentOptions(contact.treatment)}</select></label>
+            <div class="whatsapp-contact-actions">
+                <button class="btn btn-secondary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+                <button class="btn btn-primary" type="button" data-send-whatsapp="${contact.id}" data-message-type="standard"><i class="fa-solid fa-paper-plane"></i> Mensagem padrão</button>
+                <button class="btn btn-secondary" type="button" data-send-whatsapp="${contact.id}" data-message-type="replenishment"><i class="fa-solid fa-box"></i> Solicitar reposição</button>
+                <button class="btn btn-danger" type="button" data-delete-whatsapp="${contact.id}" aria-label="Remover ${escapeHtml(contact.name)}"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </form>
+    </article>`).join('');
+}
+
+async function saveWhatsappContact(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const result = await postJson('/api/toners/whatsapp-contacts', {
+        name: document.getElementById('whatsapp-name').value.trim(),
+        phone: document.getElementById('whatsapp-phone').value.trim(),
+        treatment: document.getElementById('whatsapp-treatment').value
+    });
+    document.getElementById('whatsapp-feedback').textContent = result.message;
+    if (result.success) {
+        form.reset();
+        await window.loadWhatsappContacts();
+    }
+}
+
+async function updateWhatsappContact(event) {
+    const form = event.target.closest('[data-contact-form]');
+    if (!form) return;
+    event.preventDefault();
+    const data = new FormData(form);
+    const result = await postJson(`/api/toners/whatsapp-contacts/${form.dataset.contactForm}`, Object.fromEntries(data), 'PUT');
+    document.getElementById('whatsapp-feedback').textContent = result.message;
+    if (result.success) await window.loadWhatsappContacts();
+}
+
+async function handleWhatsappContactAction(event) {
+    const sendButton = event.target.closest('[data-send-whatsapp]');
+    const deleteButton = event.target.closest('[data-delete-whatsapp]');
+    const feedback = document.getElementById('whatsapp-feedback');
+    if (sendButton) {
+        const whatsappWindow = window.open('about:blank', '_blank');
+        if (!whatsappWindow) {
+            feedback.textContent = 'Permita pop-ups para abrir o WhatsApp.';
+            return;
+        }
+        whatsappWindow.opener = null;
+        sendButton.disabled = true;
+        const result = await postJson('/api/toners/whatsapp-send', {
+            contactId: Number(sendButton.dataset.sendWhatsapp),
+            type: sendButton.dataset.messageType
+        });
+        if (result.success && result.url) {
+            whatsappWindow.location.href = result.url;
+            feedback.textContent = 'Mensagem pronta. Revise o texto e toque em enviar no WhatsApp.';
+        } else {
+            whatsappWindow.close();
+            feedback.textContent = result.message;
+        }
+        sendButton.disabled = false;
+    }
+    if (deleteButton) {
+        if (!window.confirm('Remover este contato do WhatsApp?')) return;
+        const response = await fetch(`/api/toners/whatsapp-contacts/${deleteButton.dataset.deleteWhatsapp}`, { method: 'DELETE' });
+        const result = await response.json();
+        feedback.textContent = result.message;
+        if (result.success) await window.loadWhatsappContacts();
+    }
 }
 
 function populatePrinterControls() {
@@ -219,8 +325,8 @@ function hydrateSettings() {
     }
     const channels = tonerData.notificationChannels || {};
     document.getElementById('notification-state').textContent = settings.alert_enabled
-        ? `Alertas ativados. E-mail: ${channels.email ? 'integrado' : 'configure RESEND_API_KEY e RESEND_FROM_EMAIL no servidor'}. WhatsApp: ${channels.whatsapp ? 'integrado' : 'configure a WhatsApp Cloud API no servidor'}${channels.whatsapp && !channels.whatsappTemplate ? '; mensagens proativas podem exigir um modelo aprovado' : ''}.`
-        : 'Alertas automáticos desativados.';
+        ? `Alertas automáticos ativados. E-mail: ${channels.email ? 'integrado' : 'configure RESEND_API_KEY e RESEND_FROM_EMAIL no servidor'}. WhatsApp: ${channels.whatsapp ? 'integrado' : 'configure WHATSAPP_ACCESS_TOKEN e WHATSAPP_PHONE_NUMBER_ID no servidor para alertas automáticos'}${channels.whatsapp && !channels.whatsappTemplate ? '; mensagens proativas podem exigir um modelo aprovado' : ''}. Os botões de mensagem abrem o WhatsApp com o texto pronto.`
+        : 'Alertas automáticos desativados. Os botões de mensagem abrem o WhatsApp com o texto pronto.';
 }
 
 function populateReportPrinters() {

@@ -1,5 +1,7 @@
 const db = require('../config/database');
 
+const allowedTreatments = new Set(['none', 'Sr.', 'Sra.', 'Srta.', 'Dr.', 'Dra.']);
+
 function validId(value) {
     return Number.isInteger(Number(value)) && Number(value) > 0;
 }
@@ -214,5 +216,97 @@ exports.getReportData = async (req, res) => {
     } catch (error) {
         console.error('Erro ao gerar dados de relatório:', error.message);
         res.status(500).json({ success: false, message: 'Não foi possível montar o relatório.' });
+    }
+};
+
+exports.getWhatsappContacts = async (req, res) => {
+    try {
+        const [contacts] = await db.query('SELECT id, name, phone_number AS phone, treatment FROM whatsapp_contacts ORDER BY name');
+        res.json({ success: true, data: contacts });
+    } catch (error) {
+        console.error('Erro ao carregar contatos de WhatsApp:', error.message);
+        res.status(500).json({ success: false, message: 'Erro ao carregar os contatos.' });
+    }
+};
+
+exports.createWhatsappContact = async (req, res) => {
+    const { name, phone, treatment = 'none' } = req.body;
+    const normalizedPhone = String(phone || '').replace(/\D/g, '');
+    if (!name?.trim() || name.trim().length > 100 || normalizedPhone.length < 8 || normalizedPhone.length > 15 || !allowedTreatments.has(treatment)) {
+        return res.status(400).json({ success: false, message: 'Informe nome, telefone com código do país e tratamento válidos.' });
+    }
+    try {
+        const [result] = await db.query('INSERT INTO whatsapp_contacts (name, phone_number, treatment) VALUES (?, ?, ?)', [name.trim(), normalizedPhone, treatment]);
+        res.status(201).json({ success: true, message: 'Contato cadastrado.', id: result.insertId });
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Este número já está cadastrado.' });
+        console.error('Erro ao cadastrar contato de WhatsApp:', error.message);
+        res.status(500).json({ success: false, message: 'Não foi possível cadastrar o contato.' });
+    }
+};
+
+exports.updateWhatsappContact = async (req, res) => {
+    const { name, phone, treatment } = req.body;
+    const normalizedPhone = String(phone || '').replace(/\D/g, '');
+    if (!validId(req.params.id) || !name?.trim() || name.trim().length > 100 || normalizedPhone.length < 8 || normalizedPhone.length > 15 || !allowedTreatments.has(treatment)) {
+        return res.status(400).json({ success: false, message: 'Revise nome, telefone e tratamento.' });
+    }
+    try {
+        const [result] = await db.query('UPDATE whatsapp_contacts SET name = ?, phone_number = ?, treatment = ? WHERE id = ?', [name.trim(), normalizedPhone, treatment, req.params.id]);
+        if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Contato não encontrado.' });
+        res.json({ success: true, message: 'Contato atualizado.' });
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ success: false, message: 'Este número já está cadastrado.' });
+        res.status(500).json({ success: false, message: 'Não foi possível atualizar o contato.' });
+    }
+};
+
+exports.deleteWhatsappContact = async (req, res) => {
+    if (!validId(req.params.id)) return res.status(400).json({ success: false, message: 'Contato inválido.' });
+    try {
+        const [result] = await db.query('DELETE FROM whatsapp_contacts WHERE id = ?', [req.params.id]);
+        if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Contato não encontrado.' });
+        res.json({ success: true, message: 'Contato removido.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Não foi possível remover o contato.' });
+    }
+};
+
+exports.sendWhatsappMessage = async (req, res) => {
+    const { contactId, type } = req.body;
+    if (!validId(contactId) || !['standard', 'replenishment'].includes(type)) {
+        return res.status(400).json({ success: false, message: 'Selecione um contato e um tipo de mensagem válido.' });
+    }
+    try {
+        const [[contact]] = await db.query('SELECT id, name, phone_number AS phone, treatment FROM whatsapp_contacts WHERE id = ?', [contactId]);
+        if (!contact) return res.status(404).json({ success: false, message: 'Contato não encontrado.' });
+
+        const greeting = contact.treatment === 'none' ? contact.name : `${contact.treatment} ${contact.name}`;
+        let message = `Olá, ${greeting}! Esta é uma mensagem padrão do PrintMonitor. Estamos à disposição para ajudar.`;
+
+        if (type === 'replenishment') {
+            const [[settings]] = await db.query('SELECT alert_threshold, replenish_target FROM toner_settings WHERE id = 1');
+            const [items] = await db.query(`
+                SELECT i.model, i.color, i.quantity,
+                       GROUP_CONCAT(DISTINCT p.name ORDER BY p.name SEPARATOR ', ') AS printer_names
+                FROM toner_inventory i
+                LEFT JOIN toner_inventory_printers ip ON ip.inventory_id = i.id
+                LEFT JOIN printers p ON p.id = ip.printer_id
+                WHERE i.quantity <= GREATEST(i.min_quantity, ?)
+                GROUP BY i.id ORDER BY i.quantity, i.model
+            `, [Number(settings?.alert_threshold ?? 2)]);
+            if (!items.length) return res.status(400).json({ success: false, message: 'Nenhum toner está abaixo do limite de reposição.' });
+
+            const target = Number(settings?.replenish_target ?? 5);
+            const itemLines = items.map(item => `- Modelo ${item.model} (${item.color}): estoque ${item.quantity}; solicitar ${Math.max(1, target - Number(item.quantity))} unidade(s) para ${item.printer_names || 'impressoras não vinculadas'}`).join('\n');
+            message = `Olá, ${greeting}! Solicitamos a reposição dos toners abaixo:\n${itemLines}\n\nEstoque desejado: ${target} unidade(s) por modelo.`;
+        }
+
+        const phone = String(contact.phone).replace(/\D/g, '');
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        res.json({ success: true, message: 'Conversa pronta para abrir no WhatsApp.', url });
+    } catch (error) {
+        console.error('Erro ao preparar mensagem pelo WhatsApp:', error.message);
+        res.status(500).json({ success: false, message: 'Não foi possível preparar a mensagem.' });
     }
 };

@@ -11,5 +11,10 @@ router.put('/inventory/:id', controller.updateInventory);
 router.delete('/inventory/:id', controller.deleteInventory);
 router.post('/usage', controller.recordUsage);
 router.put('/settings', controller.updateSettings);
+router.get('/whatsapp-contacts', controller.getWhatsappContacts);
+router.post('/whatsapp-contacts', controller.createWhatsappContact);
+router.put('/whatsapp-contacts/:id', controller.updateWhatsappContact);
+router.delete('/whatsapp-contacts/:id', controller.deleteWhatsappContact);
+router.post('/whatsapp-send', controller.sendWhatsappMessage);
 
 module.exports = router;

@@ -883,6 +883,23 @@ header h1 {
 .user-message { grid-column: 1 / -1; color: var(--text-muted); }
 .user-actions button:disabled { cursor: not-allowed; opacity: 0.45; }
 
+.whatsapp-workspace {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.5fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.whatsapp-contact-column { min-width: 0; }
+.whatsapp-contact { padding: 1rem; border: 1px solid var(--border-color); background: #fff; }
+.whatsapp-contact-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.whatsapp-contact-form label { display: grid; gap: 0.35rem; min-width: 0; font-size: 0.85rem; font-weight: 600; }
+.whatsapp-contact-form input,
+.whatsapp-contact-form select { width: 100%; min-width: 0; padding: 0.65rem; border: 1px solid var(--border-color); border-radius: 6px; background: #fff; font: inherit; }
+.whatsapp-contact-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
+#whatsapp-channel-state { margin: -0.75rem 0 1rem; }
+#whatsapp-feedback { min-height: 1.5rem; margin-top: 0.75rem; }
+
 @media print {
     body.printing-report .layout,
     body.printing-report .layout * { visibility: hidden; }
@@ -933,7 +950,9 @@ header h1 {
     .settings-grid,
     .report-filter-grid,
     .inventory-edit-form,
-    .user-row { grid-template-columns: 1fr; }
+    .user-row,
+    .whatsapp-workspace,
+    .whatsapp-contact-form { grid-template-columns: 1fr; }
     .toner-dashboard-metrics { justify-content: space-between; gap: 0.75rem; }
     .toner-dashboard-metrics span { max-width: 9rem; font-size: 0.75rem; }
     .settings-heading,
