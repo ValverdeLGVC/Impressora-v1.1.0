@@ -37,6 +37,7 @@
                 <a href="#" id="nav-alerts"><i class="fa-solid fa-bell"></i> Alertas</a>
                 <a href="#" id="nav-stock"><i class="fa-solid fa-boxes-stacked"></i> Estoque</a>
                 <a href="#" id="nav-reports"><i class="fa-solid fa-file-pdf"></i> Relatórios</a>
+                <a href="#" id="nav-inventory-report"><i class="fa-solid fa-clipboard-list"></i> Inventário geral</a>
             </nav>
         </aside>
 
@@ -218,6 +219,20 @@
                 <div id="report-preview" class="report-preview" aria-live="polite"></div>
             </section>
 
+            <section id="inventory-report-section" class="page-section" style="display: none;">
+                <div class="section-heading"><div><p class="eyebrow">Cadastro atual</p><h2>Inventário geral</h2></div></div>
+                <div class="report-controls inventory-report-controls">
+                    <div class="inventory-report-filters">
+                        <label for="inventory-report-search">Buscar cadastro<input id="inventory-report-search" type="search" placeholder="Nome, local, IP, modelo ou toner"></label>
+                        <label for="inventory-report-status">Status da impressora<select id="inventory-report-status"><option value="all">Todos</option><option value="online">Online</option><option value="offline">Offline</option><option value="error">Erro</option><option value="no-ip">Sem IP</option></select></label>
+                        <label for="inventory-report-stock">Estoque de toner<select id="inventory-report-stock"><option value="all">Todos</option><option value="low">No mínimo ou abaixo</option><option value="ok">Acima do mínimo</option></select></label>
+                    </div>
+                    <button type="button" id="generate-inventory-report" class="btn btn-primary"><i class="fa-solid fa-file-lines"></i> Gerar inventário</button>
+                    <p id="inventory-report-message" class="form-hint" role="status"></p>
+                </div>
+                <div id="inventory-report-preview" class="report-preview" aria-live="polite"></div>
+            </section>
+
             <!-- MODAL DE CADASTRO -->
             <div id="printer-modal" class="modal">
                 <div class="modal-content">
@@ -289,6 +304,7 @@
     <script src="js/printers.js"></script>
     <script src="js/features.js"></script>
     <script src="js/toners.js"></script>
+    <script src="js/inventory-report.js"></script>
 </body>
 
 </html>

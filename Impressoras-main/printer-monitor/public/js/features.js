@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'nav-counters': ['counters', 'Contadores'],
         'nav-alerts': ['alerts', 'Alertas'],
         'nav-stock': ['stock', 'Estoque'],
-        'nav-reports': ['reports', 'Relatórios']
+        'nav-reports': ['reports', 'Relatórios'],
+        'nav-inventory-report': ['inventory-report', 'Inventário geral']
     };
 
     Object.entries(navigation).forEach(([id, [section, title]]) => {
@@ -56,10 +57,11 @@ function showSection(section, title) {
         counters: ['counters-section'],
         alerts: ['alerts-section'],
         stock: ['stock-section'],
-        reports: ['reports-section']
+        reports: ['reports-section'],
+        'inventory-report': ['inventory-report-section']
     };
 
-    ['summary-cards', 'printer-grid', 'toner-dashboard', 'printers-list-section', 'users-section', 'counters-section', 'alerts-section', 'stock-section', 'reports-section']
+    ['summary-cards', 'printer-grid', 'toner-dashboard', 'printers-list-section', 'users-section', 'counters-section', 'alerts-section', 'stock-section', 'reports-section', 'inventory-report-section']
         .forEach(id => { document.getElementById(id).style.display = 'none'; });
 
     sections[section].forEach(id => {
@@ -72,7 +74,7 @@ function showSection(section, title) {
 
     if (section === 'counters') renderCounters();
     if (section === 'alerts') renderAlerts();
-    if (section === 'stock' || section === 'reports') window.loadTonerData?.();
+    if (section === 'stock' || section === 'reports' || section === 'inventory-report') window.loadTonerData?.();
 }
 
 window.showSection = showSection;

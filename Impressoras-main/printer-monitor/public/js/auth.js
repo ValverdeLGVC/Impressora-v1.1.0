@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('current-user').textContent = `${user.username} (${user.role === 'master' ? 'Master' : 'Visualizador'})`;
         window.dispatchEvent(new Event('auth-ready'));
         if (user.role !== 'master') {
-            ['nav-printers', 'nav-users', 'nav-counters', 'nav-alerts', 'nav-stock', 'nav-reports'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+            ['nav-printers', 'nav-users', 'nav-counters', 'nav-alerts', 'nav-stock', 'nav-reports', 'nav-inventory-report'].forEach(id => { document.getElementById(id).style.display = 'none'; });
         } else {
             document.getElementById('nav-users').addEventListener('click', async (event) => {
                 event.preventDefault();
