@@ -46,14 +46,15 @@ exports.testSnmp = async (req, res) => {
 };
 
 exports.createPrinter = async (req, res) => {
-    const { name, location, ip, manufacturer, model } = req.body;
+    const { name, location, manufacturer, model } = req.body;
+    const ip = String(req.body.ip || '').trim() || null;
     try {
-        const connection = await SnmpService.testConnection(ip);
-        const status = connection.success ? 'online' : 'offline';
+        const connection = ip ? await SnmpService.testConnection(ip) : null;
+        const status = connection?.success ? 'online' : 'offline';
 
         const [result] = await db.query(
-            'INSERT INTO printers (name, location, ip_address, manufacturer, model, status, last_checked) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-            [name, location, ip, manufacturer, model, status]
+            'INSERT INTO printers (name, location, ip_address, manufacturer, model, status, last_checked) VALUES (?, ?, ?, ?, ?, ?, IF(? IS NULL, NULL, NOW()))',
+            [name, location, ip, manufacturer, model, status, ip]
         );
         res.json({
             success: true,
@@ -64,6 +65,13 @@ exports.createPrinter = async (req, res) => {
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ success: false, message: 'Este IP já está cadastrado.' });
+        }
+        console.error('Erro ao salvar impressora:', error.message);
+        if (!ip && error.code === 'ER_BAD_NULL_ERROR') {
+            return res.status(500).json({
+                success: false,
+                message: 'O banco ainda exige um IP. Execute database/allow-printer-without-ip.sql e tente novamente.'
+            });
         }
         res.status(500).json({ success: false, message: 'Erro ao salvar impressora' });
     }

@@ -76,14 +76,14 @@ function renderDashboard(printers) {
                 <div class="printer-header">
                     <div class="printer-info">
                         <h3><i class="fa-solid fa-print"></i> ${printer.name}</h3>
-                        <p>IP: ${printer.ip} | Loc: ${printer.location}</p>
+                        <p>IP: ${printer.ip || 'Fora da rede'} | Loc: ${printer.location || '-'}</p>
                     </div>
                     <span class="status-badge ${printer.status}">
                         <i class="fa-solid ${isOnline ? 'fa-circle-check' : 'fa-circle-xmark'}"></i> 
                         ${printer.status.toUpperCase()}
                     </span>
                 </div>
-                ${printer.pageCount !== null && printer.pageCount !== undefined ? `<div class="printer-page-count">Total de impressões: ${printer.pageCount.toLocaleString('pt-BR')}</div>` : ''}
+                <div class="printer-page-count">Total de impressões: ${Number(printer.pageCount || 0).toLocaleString('pt-BR')}</div>
                 ${tonersHTML}
             </div>
         `;

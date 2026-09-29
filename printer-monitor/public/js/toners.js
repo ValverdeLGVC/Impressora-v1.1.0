@@ -57,13 +57,17 @@ function renderTonerData() {
 
 function populatePrinterControls() {
     const options = tonerData.printers.map(printer => `<option value="${printer.id}">${escapeHtml(printer.name)}</option>`).join('');
-    const inventorySelect = document.getElementById('toner-printers');
+    const inventoryPrinters = document.getElementById('toner-printers');
     const usageSelect = document.getElementById('usage-printer');
     const oldPrinter = usageSelect.value;
-    inventorySelect.innerHTML = options || '<option value="">Nenhuma impressora cadastrada</option>';
+    inventoryPrinters.innerHTML = printerCheckboxes();
     usageSelect.innerHTML = options || '<option value="">Nenhuma impressora cadastrada</option>';
     if (oldPrinter) usageSelect.value = oldPrinter;
     populateUsageToners();
+}
+
+function printerCheckboxes(selectedIds = []) {
+    return tonerData.printers.map(printer => `<label><input type="checkbox" name="printerIds" value="${printer.id}" ${selectedIds.includes(printer.id) ? 'checked' : ''}><span>${escapeHtml(printer.name)}</span></label>`).join('') || '<span class="muted">Nenhuma impressora cadastrada</span>';
 }
 
 function populateUsageToners() {
@@ -83,8 +87,9 @@ async function saveInventory(event) {
         color: document.getElementById('toner-color').value.trim(),
         quantity: Number(document.getElementById('toner-quantity').value),
         minQuantity: Number(document.getElementById('toner-minimum').value),
-        printerIds: [...document.getElementById('toner-printers').selectedOptions].map(option => Number(option.value))
+        printerIds: [...document.querySelectorAll('#toner-printers input:checked')].map(input => Number(input.value))
     };
+    if (!payload.printerIds.length) return window.alert('Selecione ao menos uma impressora compatível.');
     const result = await postJson('/api/toners/inventory', payload);
     if (!result.success) return window.alert(result.message);
     form.reset();
@@ -147,7 +152,7 @@ function renderInventory() {
             <form class="inventory-edit-form" data-edit-form="${item.id}" hidden>
                 <label>Modelo<input name="model" value="${escapeHtml(item.model)}" maxlength="120" required></label><label>Cor / tipo<input name="color" value="${escapeHtml(item.color)}" maxlength="40" required></label>
                 <label>Quantidade<input name="quantity" type="number" min="0" step="1" value="${item.quantity}" required></label><label>Estoque mínimo<input name="minQuantity" type="number" min="0" step="1" value="${item.min_quantity}" required></label>
-                <label>Impressoras vinculadas<select name="printerIds" multiple required>${tonerData.printers.map(printer => `<option value="${printer.id}" ${item.printerIds.includes(printer.id) ? 'selected' : ''}>${escapeHtml(printer.name)}</option>`).join('')}</select></label>
+                <fieldset class="printer-filter"><legend>Impressoras vinculadas</legend><div class="printer-checkboxes">${printerCheckboxes(item.printerIds)}</div></fieldset>
                 <div class="toner-stock-actions"><button class="btn btn-primary" type="submit">Salvar</button><button class="btn btn-secondary" data-cancel-edit="${item.id}" type="button">Cancelar</button></div>
             </form>
         </article>`;
@@ -164,7 +169,8 @@ function renderInventory() {
         const payload = Object.fromEntries(['model', 'color', 'quantity', 'minQuantity'].map(key => [key, data.get(key)]));
         payload.quantity = Number(payload.quantity);
         payload.minQuantity = Number(payload.minQuantity);
-        payload.printerIds = [...form.elements.printerIds.selectedOptions].map(option => Number(option.value));
+        payload.printerIds = [...form.querySelectorAll('[name="printerIds"]:checked')].map(input => Number(input.value));
+        if (!payload.printerIds.length) return window.alert('Selecione ao menos uma impressora compatível.');
         const result = await postJson(`/api/toners/inventory/${form.dataset.editForm}`, payload, 'PUT');
         if (!result.success) return window.alert(result.message);
         await window.loadTonerData();

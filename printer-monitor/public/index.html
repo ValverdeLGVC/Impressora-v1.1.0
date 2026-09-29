@@ -152,8 +152,10 @@
                             <input id="toner-quantity" type="number" min="0" step="1" required>
                             <label for="toner-minimum">Estoque mínimo</label>
                             <input id="toner-minimum" type="number" min="0" step="1" value="2" required>
-                            <label for="toner-printers">Impressoras vinculadas</label>
-                            <select id="toner-printers" multiple required></select>
+                            <fieldset class="printer-filter">
+                                <legend>Impressoras vinculadas</legend>
+                                <div id="toner-printers" class="printer-checkboxes"></div>
+                            </fieldset>
                             <button class="btn btn-primary" type="submit"><i class="fa-solid fa-plus"></i> Adicionar ao estoque</button>
                         </form>
                         <form id="toner-usage-form" class="panel-form">
@@ -225,9 +227,9 @@
                     </div>
                     <div class="modal-body">
                         <div class="form-group">
-                            <label>Endereço IP *</label>
+                            <label>Endereço IP (opcional)</label>
                             <div style="display: flex; gap: 0.5rem;">
-                                <input type="text" id="form-ip" placeholder="Ex: 192.168.1.50" required>
+                                <input type="text" id="form-ip" placeholder="Deixe vazio se estiver fora da rede">
                                 <button type="button" id="btn-test-ip" class="btn btn-secondary">Testar IP</button>
                             </div>
                             <small id="test-result" style="margin-top: 5px; display: block;"></small>

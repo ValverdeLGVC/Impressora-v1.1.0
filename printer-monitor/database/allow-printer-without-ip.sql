@@ -1,0 +1,1 @@
+ALTER TABLE printers MODIFY COLUMN ip_address VARCHAR(15) NULL;

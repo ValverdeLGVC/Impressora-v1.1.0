@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             model: document.getElementById('form-model').value
         };
 
-        if (!data.ip || !data.name) return alert('Preencha IP e Nome!');
+        if (!data.name.trim()) return alert('Preencha o nome da impressora!');
 
         const res = await fetch('/api/printers', {
             method: 'POST',
@@ -142,7 +142,7 @@ async function loadPrintersTable() {
     tbody.innerHTML = result.data.map(p => `
         <tr>
             <td><strong>${escapeHtml(p.name)}</strong></td>
-            <td>${escapeHtml(p.ip)}</td>
+            <td>${escapeHtml(p.ip || 'Fora da rede')}</td>
             <td>${escapeHtml(p.location || '-')}</td>
             <td><span class="status-badge ${p.status}">${p.status.toUpperCase()}</span></td>
             <td>

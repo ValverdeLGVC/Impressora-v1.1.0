@@ -9,10 +9,16 @@ async function checkPrinters() {
 
     try {
         const [printers] = await db.query(
-            'SELECT id, ip_address, snmp_port, snmp_version, snmp_community FROM printers WHERE is_active = 1 OR is_active IS NULL'
+            'SELECT id, ip_address, status, snmp_port, snmp_version, snmp_community FROM printers WHERE is_active = 1 OR is_active IS NULL'
         );
 
         await Promise.all(printers.map(async (printer) => {
+            if (!printer.ip_address) {
+                if (printer.status !== 'offline') {
+                    await db.query('UPDATE printers SET status = ? WHERE id = ?', ['offline', printer.id]);
+                }
+                return;
+            }
             const options = { port: printer.snmp_port, version: printer.snmp_version, community: printer.snmp_community };
             try {
                 const connection = await SnmpService.testConnection(printer.ip_address, options);
