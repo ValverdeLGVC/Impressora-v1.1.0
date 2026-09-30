@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('whatsapp-contact-form').addEventListener('submit', saveWhatsappContact);
     document.getElementById('whatsapp-contacts-list').addEventListener('submit', updateWhatsappContact);
     document.getElementById('whatsapp-contacts-list').addEventListener('click', handleWhatsappContactAction);
+    document.getElementById('toner-usage-list').addEventListener('click', deleteUsage);
     document.getElementById('usage-printer').addEventListener('change', populateUsageToners);
     document.getElementById('stock-new-printer').addEventListener('click', () => {
         window.showSection('printers', 'Impressoras');
@@ -245,6 +246,7 @@ async function postJson(url, payload, method = 'POST') {
 
 function renderInventory() {
     const list = document.getElementById('stock-list');
+    if (list.querySelector('.inventory-edit-form:not([hidden])')) return;
     if (!tonerData.inventory.length) {
         list.innerHTML = '<div class="empty-state"><i class="fa-solid fa-box-open"></i><h3>Estoque vazio</h3></div>';
         populateUsageToners();
@@ -268,6 +270,7 @@ function renderInventory() {
     }));
     list.querySelectorAll('[data-cancel-edit]').forEach(button => button.addEventListener('click', () => {
         list.querySelector(`[data-edit-form="${button.dataset.cancelEdit}"]`).hidden = true;
+        renderInventory();
     }));
     list.querySelectorAll('[data-edit-form]').forEach(form => form.addEventListener('submit', async event => {
         event.preventDefault();
@@ -279,6 +282,7 @@ function renderInventory() {
         if (!payload.printerIds.length) return window.alert('Selecione ao menos uma impressora compatível.');
         const result = await postJson(`/api/toners/inventory/${form.dataset.editForm}`, payload, 'PUT');
         if (!result.success) return window.alert(result.message);
+        form.hidden = true;
         await window.loadTonerData();
     }));
     list.querySelectorAll('[data-delete-inventory]').forEach(button => button.addEventListener('click', async () => {
@@ -293,7 +297,22 @@ function renderInventory() {
 
 function renderUsage() {
     const list = document.getElementById('toner-usage-list');
-    list.innerHTML = tonerData.usage.length ? tonerData.usage.slice(0, 12).map(entry => `<article class="usage-row"><div><strong>${escapeHtml(entry.model)} · ${escapeHtml(entry.color)}</strong><p>${escapeHtml(entry.printerName)} · ${formatDate(entry.usedAt)}</p>${entry.notes ? `<p>${escapeHtml(entry.notes)}</p>` : ''}</div><span>${entry.quantity} un.</span></article>`).join('') : '<div class="empty-state"><h3>Nenhuma troca registrada</h3></div>';
+    list.innerHTML = tonerData.usage.length ? tonerData.usage.slice(0, 12).map(entry => `<article class="usage-row"><div><strong>${escapeHtml(entry.model)} · ${escapeHtml(entry.color)}</strong><p>${escapeHtml(entry.printerName)} · ${formatDate(entry.usedAt)}</p>${entry.notes ? `<p>${escapeHtml(entry.notes)}</p>` : ''}</div><div class="usage-actions"><span>${entry.quantity} un.</span><button class="btn btn-danger" type="button" data-delete-usage="${entry.id}" aria-label="Excluir troca de ${escapeHtml(entry.model)} em ${formatDate(entry.usedAt)}" title="Excluir troca"><i class="fa-solid fa-trash"></i></button></div></article>`).join('') : '<div class="empty-state"><h3>Nenhuma troca registrada</h3></div>';
+}
+
+async function deleteUsage(event) {
+    const button = event.target.closest('[data-delete-usage]');
+    if (!button || !window.confirm('Excluir esta troca? A quantidade será devolvida ao estoque, se o toner ainda estiver cadastrado.')) return;
+    button.disabled = true;
+    try {
+        const response = await fetch(`/api/toners/usage/${button.dataset.deleteUsage}`, { method: 'DELETE' });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'Não foi possível excluir a troca.');
+        await window.loadTonerData();
+    } catch (error) {
+        button.disabled = false;
+        window.alert(error.message || 'Não foi possível contatar o servidor.');
+    }
 }
 
 function renderStockSummary() {

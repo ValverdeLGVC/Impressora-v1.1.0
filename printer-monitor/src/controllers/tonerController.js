@@ -165,6 +165,32 @@ exports.recordUsage = async (req, res) => {
     }
 };
 
+exports.deleteUsage = async (req, res) => {
+    if (!validId(req.params.id)) return res.status(400).json({ success: false, message: 'Registro de troca inválido.' });
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+        const [rows] = await connection.query('SELECT inventory_id, quantity FROM toner_usage WHERE id = ? FOR UPDATE', [req.params.id]);
+        const usage = rows[0];
+        if (!usage) {
+            await connection.rollback();
+            return res.status(404).json({ success: false, message: 'Registro de troca não encontrado.' });
+        }
+        if (usage.inventory_id) {
+            await connection.query('UPDATE toner_inventory SET quantity = quantity + ? WHERE id = ?', [usage.quantity, usage.inventory_id]);
+        }
+        await connection.query('DELETE FROM toner_usage WHERE id = ?', [req.params.id]);
+        await connection.commit();
+        res.json({ success: true, message: 'Troca excluída e quantidade devolvida ao estoque.' });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Erro ao excluir troca de toner:', error.message);
+        res.status(500).json({ success: false, message: 'Não foi possível excluir a troca.' });
+    } finally {
+        connection.release();
+    }
+};
+
 exports.updateSettings = async (req, res) => {
     const { alertEnabled, alertThreshold, replenishTarget, notifyEmail, notifyWhatsapp, decision } = req.body;
     if (typeof alertEnabled !== 'boolean' || !validQuantity(alertThreshold, true) || !validQuantity(replenishTarget, true) || (notifyEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notifyEmail))) {
